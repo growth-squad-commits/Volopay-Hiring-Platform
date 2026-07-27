@@ -6,7 +6,8 @@
       "owners": [
         "src/styles/tokens.css",
         "src/styles/base.css",
-        "src/components/brand.tsx"
+        "src/components/brand.tsx",
+        "architecture/editorial-utility.md"
       ],
       "sharedDependencies": [],
       "dataOwnership": [],

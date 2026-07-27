@@ -68,6 +68,20 @@ for (const path of sourceFiles(join(root, "src"))) {
   }
 }
 
+const styleDirectory = join(root, "src", "styles");
+for (const path of sourceFiles(styleDirectory)) {
+  if (extname(path) !== ".css" || path === join(styleDirectory, "tokens.css")) continue;
+  const repoPath = relative(root, path).replaceAll("\\", "/");
+  const contents = readFileSync(path, "utf8");
+  const rawColors = contents.match(/#[0-9a-fA-F]{3,8}\b/g) ?? [];
+  if (rawColors.length) {
+    errors.push(`${repoPath} contains raw colors (${[...new Set(rawColors)].join(", ")}); add semantic values to tokens.css instead.`);
+  }
+  if (/surface-inverse|line-inverse|accent\b/.test(contents)) {
+    errors.push(`${repoPath} references a retired dark-theme token.`);
+  }
+}
+
 if (errors.length) {
   console.error(errors.map((error) => `- ${error}`).join("\n"));
   process.exit(1);
