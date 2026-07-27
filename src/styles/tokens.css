@@ -1,48 +1,49 @@
 :root {
   color-scheme: light;
 
-  --font-sans: Inter, "SF Pro Text", "SF Pro Display", "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-sans: Inter, "SF Pro Text", "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-display: Georgia, "Times New Roman", serif;
   --font-mono: "SFMono-Regular", "Cascadia Code", "Roboto Mono", Consolas, monospace;
 
-  --canvas: #f5f6f2;
-  --canvas-soft: #fafaf8;
+  --canvas: #f6f3ed;
+  --canvas-soft: #fbfaf7;
   --surface: #ffffff;
-  --surface-subtle: #f7f8f5;
-  --surface-strong: #15161a;
-  --surface-inverse: #0d0e12;
+  --surface-subtle: #f3f0e9;
+  --surface-muted: #ebe7df;
+  --surface-sage: #edf4ee;
 
-  --ink: #17181c;
-  --ink-soft: #3f424b;
-  --muted: #71747e;
-  --muted-light: #9699a2;
+  --ink: #2d2d2a;
+  --ink-soft: #51514c;
+  --muted: #77766f;
+  --muted-light: #9a9890;
   --inverse: #ffffff;
 
-  --line: #e4e5df;
-  --line-strong: #d4d6cf;
-  --line-inverse: #2b2d34;
+  --line: #e4dfd6;
+  --line-strong: #d2ccc1;
 
-  --primary: #5c5af6;
-  --primary-hover: #4b48e8;
-  --primary-soft: #eeedff;
-  --primary-faint: #f6f5ff;
-  --accent: #c9ff67;
+  --primary: #e77765;
+  --primary-hover: #d76250;
+  --primary-soft: #fff0ec;
+  --primary-faint: #fff8f5;
 
-  --success: #14795f;
-  --success-soft: #e7f7f1;
-  --danger: #b53b4d;
-  --danger-soft: #fff0f2;
-  --warning: #9b621d;
-  --warning-soft: #fff4e5;
+  --success: #477255;
+  --success-soft: #e4f0e6;
+  --info: #5f718f;
+  --info-soft: #edf2f7;
+  --danger: #ad4655;
+  --danger-soft: #fbecef;
+  --warning: #90672f;
+  --warning-soft: #f8f0e3;
 
-  --shadow-xs: 0 1px 2px rgba(19, 22, 29, 0.04);
-  --shadow-sm: 0 8px 24px rgba(19, 22, 29, 0.06);
-  --shadow-md: 0 20px 48px rgba(19, 22, 29, 0.1);
-  --shadow-lg: 0 32px 90px rgba(8, 10, 16, 0.18);
+  --shadow-xs: 0 1px 2px rgba(45, 45, 42, 0.035);
+  --shadow-sm: 0 8px 24px rgba(45, 45, 42, 0.055);
+  --shadow-md: 0 18px 48px rgba(45, 45, 42, 0.09);
+  --shadow-lg: 0 28px 80px rgba(45, 45, 42, 0.14);
 
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
 
-  --ease: cubic-bezier(0.2, 0.75, 0.25, 1);
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
