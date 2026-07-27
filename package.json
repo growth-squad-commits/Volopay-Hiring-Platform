@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "check:architecture": "node scripts/check-architecture.mjs",
     "seed:demo": "node scripts/seed-demo.mjs"
   },
   "dependencies": {

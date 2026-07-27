@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "features": {
+    "design-system": {
+      "entry": "src/app/globals.css",
+      "owners": [
+        "src/styles/tokens.css",
+        "src/styles/base.css",
+        "src/components/brand.tsx"
+      ],
+      "sharedDependencies": [],
+      "dataOwnership": [],
+      "validation": "npm run check:architecture"
+    },
+    "authentication-surfaces": {
+      "entry": "src/app/admin/login/page.tsx",
+      "owners": [
+        "src/app/candidate/login/page.tsx",
+        "src/styles/auth.css"
+      ],
+      "sharedDependencies": [
+        "src/components/brand.tsx",
+        "src/lib/supabase"
+      ],
+      "dataOwnership": [
+        "admin_profiles"
+      ],
+      "validation": "npm run build"
+    },
+    "admin-workspace": {
+      "entry": "src/app/admin/page.tsx",
+      "owners": [
+        "src/components/admin-dashboard.tsx",
+        "src/styles/workspace.css",
+        "src/styles/overlays.css"
+      ],
+      "sharedDependencies": [
+        "src/components/brand.tsx",
+        "src/lib/supabase",
+        "src/lib/types.ts"
+      ],
+      "dataOwnership": [
+        "assessments",
+        "assessment_questions",
+        "candidates",
+        "candidate_responses"
+      ],
+      "validation": "npm run build"
+    },
+    "candidate-experience": {
+      "entry": "src/app/candidate/page.tsx",
+      "owners": [
+        "src/app/candidate/assessment/[candidateId]/page.tsx",
+        "src/app/candidate/thank-you/page.tsx",
+        "src/components/candidate-workspace.tsx",
+        "src/components/assessment-runner.tsx",
+        "src/styles/candidate.css"
+      ],
+      "sharedDependencies": [
+        "src/components/brand.tsx",
+        "src/lib/supabase",
+        "src/lib/types.ts"
+      ],
+      "dataOwnership": [
+        "candidates",
+        "candidate_responses",
+        "candidate-submissions"
+      ],
+      "validation": "npm run build"
+    }
+  }
+}

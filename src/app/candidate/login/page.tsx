@@ -41,9 +41,9 @@ export default function CandidateLoginPage() {
       {error && <div className="alert error">{error}</div>}{message && <div className="alert success">{message}</div>}
       <label>Email address<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
       <label>Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
-      <button className="button primary full" disabled={busy}>{busy ? "Please wait…" : "Sign in with sample account"}</button>
-      <div className="divider"><span>future candidate access</span></div>
-      <button className="button secondary full" type="button" onClick={magicLink} disabled={busy}>Email me a magic link</button>
+      <button className="button primary full" disabled={busy}>{busy ? "Please wait…" : "Sign in"}</button>
+      <div className="divider"><span>or continue passwordless</span></div>
+      <button className="button secondary full" type="button" onClick={magicLink} disabled={busy}>Email me a secure link</button>
     </form></section>
   </main>;
 }
