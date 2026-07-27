@@ -1,0 +1,15 @@
+version: 1
+repository: growth-squad-commits/Volopay-Hiring-Platform
+default_branch: main
+risk_profile: M2
+skills:
+  - repo-first-workflow
+  - bounded-code-work
+  - engineer-maintainable-codebases
+validation:
+  architecture: npm run check:architecture
+  lint: npm run lint
+  release: npm run build
+deployment:
+  provider: coolify
+  source: Dockerfile

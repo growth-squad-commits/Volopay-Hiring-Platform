@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "defaults": {
+    "newSourceFileMaxLines": 700,
+    "newTestFileMaxLines": 600
+  },
+  "legacyNonGrowth": {},
+  "exceptions": []
+}
