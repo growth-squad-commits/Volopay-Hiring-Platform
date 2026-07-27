@@ -77,12 +77,18 @@ export function AdminDashboard({ email }: { email: string }) {
 
   async function addCandidate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (!selected) return;
-    setBusy(true); const form = new FormData(event.currentTarget);
-    const { error: insertError } = await supabase.from("candidates").upsert({
-      assessment_id: selected.id, full_name: String(form.get("name")).trim(), email: String(form.get("email")).trim().toLowerCase(),
-      phone: String(form.get("phone")).trim() || null, source: "manual",
-    }, { onConflict: "assessment_id,email" });
-    if (insertError) setError(insertError.message); else { setModal(null); notify("Candidate added."); await load(); }
+    setBusy(true); setError(""); const form = new FormData(event.currentTarget);
+    const response = await fetch("/api/admin/candidates", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ candidates: [{
+        assessmentId: selected.id, fullName: String(form.get("name")).trim(),
+        email: String(form.get("email")).trim().toLowerCase(),
+        phone: String(form.get("phone")).trim() || null, source: "manual",
+      }] }),
+    });
+    const result = await response.json() as { error?: string; results?: { error?: string }[] };
+    if (!response.ok) setError(result.error ?? result.results?.[0]?.error ?? "Could not add candidate.");
+    else { setModal(null); notify("Candidate added."); await load(); }
     setBusy(false);
   }
 
@@ -99,8 +105,16 @@ export function AdminDashboard({ email }: { email: string }) {
     });
     if (!rows.length) setError("No valid rows found. Use columns: Name, Email, Phone.");
     else {
-      const { error: importError } = await supabase.from("candidates").upsert(rows, { onConflict: "assessment_id,email" });
-      if (importError) setError(importError.message); else { setModal(null); notify(`${rows.length} candidates imported.`); await load(); }
+      const response = await fetch("/api/admin/candidates", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ candidates: rows.map((row) => ({
+          assessmentId: row.assessment_id, fullName: row.full_name, email: row.email,
+          phone: row.phone, source: row.source,
+        })) }),
+      });
+      const result = await response.json() as { error?: string; invited?: number; failed?: number };
+      if (!response.ok) setError(result.error ?? "Candidates could not be imported.");
+      else { setModal(null); notify(`${result.invited ?? rows.length} candidates imported.`); await load(); }
     }
     setBusy(false);
   }

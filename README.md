@@ -21,7 +21,7 @@ Both portals live in this one application. Supabase links them through `assessme
 - Written, link and file-upload responses
 - Assessment availability dates and fixed attempt duration
 - Manual candidate creation and Excel import
-- Candidate email/password test login
+- Candidate email/password login
 - Supabase magic-link candidate login, ready for production invitations
 - Candidate-only assigned assessment access
 - Autosaved candidate responses
@@ -51,10 +51,8 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_YOUR_KEY
 SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVER_ONLY_SERVICE_ROLE_KEY
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
-DEMO_CANDIDATE_EMAIL=candidate.demo@volopay.co
-DEMO_CANDIDATE_PASSWORD=VolopayTest2026!
-NEXT_PUBLIC_DEMO_CANDIDATE_EMAIL=candidate.demo@volopay.co
-NEXT_PUBLIC_DEMO_CANDIDATE_PASSWORD=VolopayTest2026!
+DEMO_CANDIDATE_EMAIL=YOUR_PRIVATE_TEST_CANDIDATE_EMAIL
+DEMO_CANDIDATE_PASSWORD=YOUR_PRIVATE_STRONG_TEST_PASSWORD
 
 BOOTSTRAP_ADMIN_EMAIL=sandeep.juttuga@volopay.co
 BOOTSTRAP_ADMIN_PASSWORD=USE_A_STRONG_PASSWORD
@@ -74,8 +72,7 @@ npm run seed:demo
 This creates:
 
 - The admin account from `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD`
-- Candidate: `candidate.demo@volopay.co`
-- Candidate password: `VolopayTest2026!`
+- The candidate account from `DEMO_CANDIDATE_EMAIL` and `DEMO_CANDIDATE_PASSWORD`
 - A published sample assessment assigned to that candidate
 
 The seed script is idempotent and can be run again.
@@ -132,8 +129,7 @@ The first row is treated as the header.
 
 ## Production checklist
 
-- Replace all sample passwords.
-- Remove the public sample credentials from the candidate login page after testing.
+- Keep all test passwords private and server-only.
 - Configure custom SMTP in Supabase before sending candidate magic links at scale.
 - Enable leaked-password protection in Supabase Auth.
 - Keep the service-role key only in server environment variables.

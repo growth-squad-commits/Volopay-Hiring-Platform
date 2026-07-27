@@ -9,7 +9,13 @@ export default async function AssessmentPage({ params }: { params: Promise<{ can
   const id = Number(candidateId);
   if (!Number.isInteger(id)) redirect("/candidate");
   const supabase = await createClient();
-  const { data: claims } = await supabase.auth.getClaims();
-  if (!claims?.claims?.sub) redirect("/candidate/login");
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user?.id || !auth.user.email) redirect("/candidate/login");
+  const { data: assignment } = await supabase.from("candidates").select("id")
+    .eq("id", id)
+    .eq("auth_user_id", auth.user.id)
+    .eq("email", auth.user.email.toLowerCase())
+    .maybeSingle();
+  if (!assignment) redirect("/candidate");
   return <AssessmentRunner candidateId={id}/>;
 }

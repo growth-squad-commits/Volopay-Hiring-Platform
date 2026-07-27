@@ -2,7 +2,6 @@
 
 import { FormEvent, useState } from "react";
 import { Brand } from "@/components/brand";
-import { createClient } from "@/lib/supabase/client";
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
@@ -13,12 +12,12 @@ export default function AdminLoginPage() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true); setError("");
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    const { data, error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
-    if (signInError || !data.user) { setError("Invalid admin email or password."); setBusy(false); return; }
-    const { data: admin } = await supabase.from("admin_profiles").select("is_active").eq("user_id", data.user.id).eq("is_active", true).maybeSingle();
-    if (!admin) { await supabase.auth.signOut(); setError("This account is not an active administrator."); setBusy(false); return; }
+    const response = await fetch("/api/auth/login", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email, password, portal: "admin" }),
+    });
+    const result = await response.json() as { error?: string };
+    if (!response.ok) { setError(result.error ?? "Invalid admin email or password."); setBusy(false); return; }
     window.location.replace("/admin");
   }
 

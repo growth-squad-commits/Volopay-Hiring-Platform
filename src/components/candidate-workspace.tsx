@@ -20,10 +20,11 @@ export function CandidateWorkspace({ email }: { email: string }) {
   const load = useCallback(async () => {
     const { data, error: queryError } = await supabase.from("candidates")
       .select("id,full_name,status,score,decision,submitted_at,started_at,expires_at,assessment:assessments(id,title,description,duration_minutes,total_points,available_from,available_until,questions:assessment_questions(id))")
+      .eq("email", email.toLowerCase())
       .order("created_at", { ascending: false });
     if (queryError) setError(queryError.message); else setItems((data ?? []) as unknown as Assignment[]);
     setNow(Date.now()); setLoading(false);
-  }, []);
+  }, [email]);
   useEffect(() => { const timer = window.setTimeout(() => void load(), 0); return () => clearTimeout(timer); }, [load]);
 
   async function start(id: number) {

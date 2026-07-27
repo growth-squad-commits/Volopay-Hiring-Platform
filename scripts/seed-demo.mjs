@@ -2,11 +2,13 @@ import { createClient } from "@supabase/supabase-js";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const candidateEmail = process.env.DEMO_CANDIDATE_EMAIL ?? "candidate.demo@volopay.co";
-const candidatePassword = process.env.DEMO_CANDIDATE_PASSWORD ?? "VolopayTest2026!";
+const candidateEmail = process.env.DEMO_CANDIDATE_EMAIL;
+const candidatePassword = process.env.DEMO_CANDIDATE_PASSWORD;
 const adminEmail = process.env.BOOTSTRAP_ADMIN_EMAIL;
 const adminPassword = process.env.BOOTSTRAP_ADMIN_PASSWORD;
-if (!url || !serviceKey) throw new Error("Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
+if (!url || !serviceKey || !candidateEmail || !candidatePassword) {
+  throw new Error("Set NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, DEMO_CANDIDATE_EMAIL, and DEMO_CANDIDATE_PASSWORD.");
+}
 
 const supabase = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
 
