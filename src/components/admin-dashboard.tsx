@@ -317,6 +317,8 @@ export function AdminDashboard({ email }: { email: string }) {
           <div className="section-title candidate-title"><h2>Candidates {selected ? `· ${selected.title}` : ""}</h2><div><button className="button secondary small" disabled={!selected} onClick={() => setModal("import")}><FileSpreadsheet size={14}/> Import Excel</button><button className="button primary small" disabled={!selected} onClick={() => setModal("candidate")}><Users size={14}/> Add candidate</button></div></div>
           <div className="table-wrap"><table><thead><tr><th>Candidate</th><th>Status</th><th>Access</th><th>Score</th><th>Decision</th><th>Submission</th></tr></thead><tbody>
             {(selected?.candidates ?? []).map((candidate) => {
+              // The current time is intentionally read here so access expiry is accurate on each render.
+              // eslint-disable-next-line react-hooks/purity
               const active = candidate.is_active && (!candidate.access_expires_at || new Date(candidate.access_expires_at).getTime() > Date.now());
               return <tr key={candidate.id}><td><strong>{candidate.full_name}</strong><small>{candidate.email}</small></td><td><em className={`status ${candidate.status}`}>{candidate.status.replaceAll("_", " ")}</em></td><td><button className="text-button" onClick={() => { setReviewCandidate(candidate); setModal("access"); }}>{active ? "Active" : candidate.is_active ? "Expired" : "Inactive"}</button></td><td>{candidate.score ?? "—"}</td><td>{candidate.decision}</td><td><button className="text-button" disabled={!['submitted','reviewed'].includes(candidate.status)} onClick={() => { setReviewCandidate(candidate); setModal("review"); }}>View & review</button></td></tr>;
             })}
