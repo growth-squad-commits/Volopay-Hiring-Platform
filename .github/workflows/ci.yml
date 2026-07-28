@@ -23,6 +23,16 @@ jobs:
       - run: npm ci
       - run: npm run test:phase1
       - run: npm run test:phase2
-      - run: npm run lint
+      - name: Run ESLint and capture report
+        id: lint
+        continue-on-error: true
+        run: npx eslint . --format json --output-file eslint-report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eslint-report
+          path: eslint-report.json
+      - name: Fail on lint errors
+        if: steps.lint.outcome == 'failure'
+        run: exit 1
       - run: npx tsc --noEmit
       - run: npm run build
