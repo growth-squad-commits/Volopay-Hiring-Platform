@@ -10,7 +10,7 @@ export default async function CandidatePage() {
   if (!data.user?.id || !data.user.email) redirect("/candidate/login");
   const email = data.user.email.toLowerCase();
   const { data: assignment } = await supabase.from("candidates").select("id")
-    .eq("auth_user_id", data.user.id).eq("email", email).limit(1).maybeSingle();
+    .eq("auth_user_id", data.user.id).eq("email", email).eq("is_active", true).limit(1).maybeSingle();
   if (!assignment) {
     await supabase.auth.signOut();
     redirect("/candidate/login");

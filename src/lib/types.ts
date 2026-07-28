@@ -11,7 +11,8 @@ export type ResponseRecord = {
 export type Candidate = {
   id: number; assessment_id: number; full_name: string; email: string; phone: string | null;
   status: string; score: number | null; decision: string; submitted_at: string | null;
-  started_at: string | null; expires_at: string | null; source: string; responses?: ResponseRecord[];
+  started_at: string | null; expires_at: string | null; source: string;
+  is_active: boolean; access_expires_at: string | null; responses?: ResponseRecord[];
 };
 export type Assessment = {
   id: number; title: string; description: string; instructions: string; status: string;

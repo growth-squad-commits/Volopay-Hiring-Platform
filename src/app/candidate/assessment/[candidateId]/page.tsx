@@ -15,6 +15,7 @@ export default async function AssessmentPage({ params }: { params: Promise<{ can
     .eq("id", id)
     .eq("auth_user_id", auth.user.id)
     .eq("email", auth.user.email.toLowerCase())
+    .eq("is_active", true)
     .maybeSingle();
   if (!assignment) redirect("/candidate");
   return <AssessmentRunner candidateId={id}/>;
