@@ -11,15 +11,14 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as { email?: unknown; password?: unknown; portal?: unknown };
     const email = normalizeEmail(body.email);
     const password = typeof body.password === "string" ? body.password : "";
-    const portal = body.portal;
-    if (!isEmail(email) || !password || password.length > 1024 || (portal !== "admin" && portal !== "candidate")) {
-      throw new AppError(400, "Enter a valid email and password.");
+    if (!isEmail(email) || !password || password.length > 1024 || body.portal !== "admin") {
+      throw new AppError(400, "Enter a valid admin email and password.");
     }
 
     const ip = requestIp(request);
     await Promise.all([
-      consumeRateLimit({ scope: `login-ip:${portal}`, identifier: ip, limit: 20, windowSeconds: 900 }),
-      consumeRateLimit({ scope: `login-account:${portal}`, identifier: `${email}:${ip}`, limit: 5, windowSeconds: 900 }),
+      consumeRateLimit({ scope: "login-ip:admin", identifier: ip, limit: 20, windowSeconds: 900 }),
+      consumeRateLimit({ scope: "login-account:admin", identifier: `${email}:${ip}`, limit: 5, windowSeconds: 900 }),
     ]);
 
     const supabase = await createClient();
@@ -27,20 +26,11 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error || !data.user) throw new AppError(401, "Invalid email or password.");
 
-    if (portal === "admin") {
-      const { data: admin } = await supabase.from("admin_profiles").select("user_id")
-        .eq("user_id", data.user.id).eq("is_active", true).maybeSingle();
-      if (!admin) {
-        await supabase.auth.signOut();
-        throw new AppError(403, "This account is not an active administrator.");
-      }
-    } else {
-      const { data: assignment } = await supabase.from("candidates").select("id")
-        .eq("auth_user_id", data.user.id).eq("email", email).limit(1).maybeSingle();
-      if (!assignment) {
-        await supabase.auth.signOut();
-        throw new AppError(403, "No assessment is assigned to this account.");
-      }
+    const { data: admin } = await supabase.from("admin_profiles").select("user_id")
+      .eq("user_id", data.user.id).eq("is_active", true).maybeSingle();
+    if (!admin) {
+      await supabase.auth.signOut();
+      throw new AppError(403, "This account is not an active administrator.");
     }
 
     return NextResponse.json({ ok: true }, { headers: { "cache-control": "no-store" } });
