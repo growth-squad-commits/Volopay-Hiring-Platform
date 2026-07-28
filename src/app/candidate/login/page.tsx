@@ -8,6 +8,7 @@ export default function CandidateLoginPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [demoBusy, setDemoBusy] = useState(false);
 
   useEffect(() => {
     const reason = new URLSearchParams(window.location.search).get("error");
@@ -39,6 +40,18 @@ export default function CandidateLoginPage() {
     setBusy(false);
   }
 
+  async function openDemoAssessment() {
+    setDemoBusy(true); setError(""); setMessage("");
+    const response = await fetch("/api/auth/demo-candidate", { method: "POST" });
+    const result = await response.json() as { error?: string; redirect?: string };
+    if (!response.ok) {
+      setError(result.error ?? "Demo access is temporarily unavailable.");
+      setDemoBusy(false);
+      return;
+    }
+    window.location.assign(result.redirect ?? "/candidate");
+  }
+
   return <main className="auth-page">
     <section className="auth-visual candidate"><Brand /><div><span>CANDIDATE PORTAL</span><h1>Your next opportunity starts here.</h1><p>Access your assigned assessment and submit your work securely.</p></div></section>
     <section className="auth-panel"><form className="auth-card" onSubmit={requestMagicLink}>
@@ -46,6 +59,10 @@ export default function CandidateLoginPage() {
       {error && <div className="alert error">{error}</div>}{message && <div className="alert success">{message}</div>}
       <label>Email address<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" /></label>
       <button className="button primary full" disabled={busy}>{busy ? "Sending secure link…" : "Email me a secure link"}</button>
+      <button type="button" className="button secondary full" disabled={demoBusy || busy} onClick={openDemoAssessment}>
+        {demoBusy ? "Opening demo…" : "Continue with demo access"}
+      </button>
+      <p className="muted">Temporary candidate-only access for testing. No email is required.</p>
     </form></section>
   </main>;
 }

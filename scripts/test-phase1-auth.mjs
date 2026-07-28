@@ -10,6 +10,7 @@ function has(text, value, label) {
 }
 
 const candidateLogin = await source("src/app/candidate/login/page.tsx");
+const demoCandidateRoute = await source("src/app/api/auth/demo-candidate/route.ts");
 const adminLoginRoute = await source("src/app/api/auth/login/route.ts");
 const magicLinkRoute = await source("src/app/api/auth/magic-link/route.ts");
 const callbackRoute = await source("src/app/auth/callback/route.ts");
@@ -25,6 +26,15 @@ const consolidatedPolicies = await source("supabase/migrations/202607280005_cons
 
 assert.ok(!candidateLogin.includes('type="password"'), "Candidate password input must remain removed.");
 has(candidateLogin, "/api/auth/magic-link", "candidate magic-link endpoint");
+has(candidateLogin, "/api/auth/demo-candidate", "temporary candidate demo endpoint");
+has(candidateLogin, "Continue with demo access", "candidate demo sign-in control");
+has(demoCandidateRoute, 'scope: "demo-candidate-ip"', "demo sign-in rate limit");
+has(demoCandidateRoute, "admin.auth.admin.generateLink", "passwordless server-side demo session");
+has(demoCandidateRoute, 'type: "email"', "demo token verification");
+has(demoCandidateRoute, 'source: "temporary_demo"', "isolated demo assignment");
+has(demoCandidateRoute, 'status: "not_started"', "database-compatible demo candidate status");
+has(demoCandidateRoute, "DEMO_ACCESS_ENDS_AT", "automatic demo-access expiry");
+assert.ok(!demoCandidateRoute.includes("signInWithPassword"), "Demo access must not restore password login.");
 has(candidateLogin, "Your assessment access has expired", "expired-access message");
 has(adminLoginRoute, 'body.portal !== "admin"', "Admin-only password login");
 has(adminLoginRoute, "login-account:admin", "Admin account rate limit");
