@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { safeCandidatePath } from "@/lib/server/auth";
 
@@ -31,16 +32,19 @@ export async function GET(request: NextRequest) {
   }
 
   const email = auth.user.email.toLowerCase();
-  const { data: assignment } = await supabase.from("candidates").select("id")
+  const admin = createAdminClient();
+  const { data: assignments } = await admin.from("candidates")
+    .select("id,is_active,access_expires_at")
     .eq("auth_user_id", auth.user.id)
     .eq("email", email)
-    .eq("is_active", true)
-    .limit(1)
-    .maybeSingle();
+    .order("created_at", { ascending: false });
 
-  if (!assignment) {
+  const now = Date.now();
+  const active = (assignments ?? []).find((item) => item.is_active && (!item.access_expires_at || new Date(item.access_expires_at).getTime() > now));
+  if (!active) {
+    const expired = (assignments ?? []).some((item) => item.is_active && item.access_expires_at && new Date(item.access_expires_at).getTime() <= now);
     await supabase.auth.signOut();
-    return NextResponse.redirect(new URL("/candidate/login?error=no_active_assignment", url.origin));
+    return NextResponse.redirect(new URL(expired ? "/candidate/login?error=access_expired" : "/candidate/login?error=no_active_assignment", url.origin));
   }
 
   return NextResponse.redirect(new URL(next, url.origin));
