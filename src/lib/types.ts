@@ -7,6 +7,13 @@ export type Question = {
 export type ResponseRecord = {
   id: number; candidate_id: number; question_id: number; response_text: string | null;
   response_url: string | null; file_path: string | null; file_name: string | null; file_size: number | null;
+  attempt_id?: string | null; client_revision?: number;
+};
+export type ExamAttempt = {
+  id: string; candidate_id: number; assessment_id: number; student_id: string;
+  status: "in_progress" | "submitted" | "auto_submitted";
+  started_at: string; ends_at: string; submitted_at: string | null;
+  submission_reason: "manual" | "timeout" | null;
 };
 export type Candidate = {
   id: number; assessment_id: number; full_name: string; email: string; phone: string | null;

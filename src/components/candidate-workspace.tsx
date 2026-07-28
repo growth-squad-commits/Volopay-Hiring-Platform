@@ -29,8 +29,14 @@ export function CandidateWorkspace({ email }: { email: string }) {
 
   async function start(id: number) {
     setError("");
-    const { error: updateError } = await supabase.from("candidates").update({ status: "in_progress" }).eq("id", id).eq("status", "not_started");
-    if (updateError) setError(updateError.message); else window.location.assign(`/candidate/assessment/${id}`);
+    const response = await fetch("/api/candidate/attempts/start", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ candidateId: id }),
+    });
+    const result = await response.json() as { redirect?: string; error?: string };
+    if (!response.ok || !result.redirect) setError(result.error ?? "Could not start the assessment.");
+    else window.location.assign(result.redirect);
   }
   async function signOut() { await supabase.auth.signOut(); window.location.replace("/candidate/login"); }
 

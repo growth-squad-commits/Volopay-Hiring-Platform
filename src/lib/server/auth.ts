@@ -21,6 +21,17 @@ export async function requireAdmin() {
   return { supabase, user: auth.user };
 }
 
+export async function requireCandidate() {
+  const supabase = await createClient();
+  const { data: auth, error } = await supabase.auth.getUser();
+  if (error || !auth.user?.id || !auth.user.email) throw new AppError(401, "Please sign in.");
+  return {
+    supabase,
+    user: auth.user,
+    email: auth.user.email.trim().toLowerCase(),
+  };
+}
+
 export function normalizeEmail(value: unknown) {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
 }

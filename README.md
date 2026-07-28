@@ -25,7 +25,10 @@ Both portals live in this one application. Supabase links them through `assessme
 - Candidate invitation, assignment, activation and access-expiry controls
 - Reusable question banks with CSV/XLSX import
 - Candidate-only assigned assessment access
-- Autosaved candidate responses
+- Server-authoritative attempt deadlines
+- Autosaved candidate responses with IndexedDB offline retry
+- Automatic timeout submission through a durable database scheduler
+- Subjective-answer grading queue
 - Private Supabase Storage uploads
 - Final submission and thank-you page
 - Admin response review, scoring and hiring decisions
@@ -48,8 +51,9 @@ Current order:
 6. `202607280005_precise_admin_rls.sql`
 7. `202607280006_question_banks.sql`
 8. `202607280007_exam_builder_snapshots.sql`
+9. `202607280008_phase4_exam_attempts.sql`
 
-The migrations create the application tables, indexes, access controls, rate limits, candidate expiry controls, question banks, timer enforcement and private upload bucket. Record applied migrations in the target environment and never skip a file.
+The migrations create the application tables, indexes, access controls, rate limits, candidate expiry controls, question banks, timer enforcement and private upload bucket. Phase 4 also enables Supabase `pg_cron` and registers the idempotent `phase4-auto-submit-expired-attempts` job. Record applied migrations in the target environment and never skip a file.
 
 ## 2. Configure environment variables
 
@@ -94,6 +98,12 @@ npm run dev
 ```
 
 Open the admin portal, create an assessment, add a candidate and request a magic link using that exact candidate email.
+
+Phase 4 starts each assessment through an authenticated server route. PostgreSQL
+records the authoritative `ends_at`, every answer save is validated against that
+deadline, and a ten-second scheduler finalizes abandoned attempts. The
+browser countdown is display-only and synchronizes to server time after loading
+and saving.
 
 ## 5. Deploy with Cloudflare
 

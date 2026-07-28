@@ -12,8 +12,8 @@ const confirmation = await source("src/components/submission-confirmation.tsx");
 const dashboard = await source("src/components/admin-dashboard.tsx");
 
 assert.match(runner, /candidate\/submission\/\$\{candidateId\}/);
-assert.match(runner, /response_type==="link"/);
-assert.match(runner, /response_type==="file_upload"/);
+assert.match(runner, /response_type === "link"/);
+assert.match(runner, /response_type === "file_upload"/);
 assert.match(runner, /candidate-submissions/);
 assert.match(workspace, /View submission/);
 assert.match(confirmationPage, /\.in\("status", \["submitted", "reviewed"\]\)/);
