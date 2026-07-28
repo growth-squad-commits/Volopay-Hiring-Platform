@@ -105,3 +105,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: failure.message }, { status: failure.status });
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    await requireAdmin();
+    const body = (await request.json()) as { candidateId?: unknown; isActive?: unknown; accessExpiresAt?: unknown };
+    const candidateId = Number(body.candidateId);
+    if (!Number.isSafeInteger(candidateId) || candidateId < 1 || typeof body.isActive !== "boolean") {
+      throw new AppError(400, "Invalid candidate access update.");
+    }
+    const accessExpiresAt = parseAccessExpiry(body.accessExpiresAt);
+    const admin = createAdminClient();
+    const { data, error } = await admin.from("candidates")
+      .update({ is_active: body.isActive, access_expires_at: accessExpiresAt })
+      .eq("id", candidateId)
+      .select("id,is_active,access_expires_at")
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) throw new AppError(404, "Candidate assignment not found.");
+    return NextResponse.json({ candidate: data });
+  } catch (error) {
+    const failure = publicError(error);
+    return NextResponse.json({ error: failure.message }, { status: failure.status });
+  }
+}
