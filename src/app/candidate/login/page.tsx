@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Brand } from "@/components/brand";
 
 export default function CandidateLoginPage() {
@@ -8,6 +8,13 @@ export default function CandidateLoginPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    const reason = new URLSearchParams(window.location.search).get("error");
+    if (reason === "access_expired") setError("Your assessment access has expired. Please contact the hiring team.");
+    else if (reason === "no_active_assignment") setError("No active assessment is available for this email.");
+    else if (reason === "invalid_or_expired_link") setError("This secure sign-in link is invalid or has expired. Request a new link below.");
+  }, []);
 
   async function requestMagicLink(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
