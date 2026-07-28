@@ -34,12 +34,13 @@ export async function GET(request: NextRequest) {
   const { data: assignment } = await supabase.from("candidates").select("id")
     .eq("auth_user_id", auth.user.id)
     .eq("email", email)
+    .eq("is_active", true)
     .limit(1)
     .maybeSingle();
 
   if (!assignment) {
     await supabase.auth.signOut();
-    return NextResponse.redirect(new URL("/candidate/login?error=no_assignment", url.origin));
+    return NextResponse.redirect(new URL("/candidate/login?error=no_active_assignment", url.origin));
   }
 
   return NextResponse.redirect(new URL(next, url.origin));
