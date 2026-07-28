@@ -19,8 +19,13 @@ export async function POST(request: NextRequest) {
     ]);
 
     const admin = createAdminClient();
+    const now = new Date().toISOString();
     const { data: assignment } = await admin.from("candidates").select("id")
-      .eq("email", email).eq("is_active", true).limit(1).maybeSingle();
+      .eq("email", email)
+      .eq("is_active", true)
+      .or(`access_expires_at.is.null,access_expires_at.gt.${now}`)
+      .limit(1)
+      .maybeSingle();
     if (assignment) {
       const { error } = await admin.auth.signInWithOtp({
         email,
