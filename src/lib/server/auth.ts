@@ -2,7 +2,11 @@ import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 export class AppError extends Error {
-  constructor(public readonly status: number, message: string) {
+  constructor(
+    public readonly status: number,
+    message: string,
+    public readonly headers: Record<string, string> = {},
+  ) {
     super(message);
   }
 }
@@ -29,8 +33,17 @@ export function requestOrigin(request: NextRequest) {
   return (process.env.NEXT_PUBLIC_SITE_URL?.trim() || request.nextUrl.origin).replace(/\/+$/, "");
 }
 
+export function safeCandidatePath(value: string | null) {
+  if (!value) return "/candidate";
+  if (value === "/candidate" || value === "/candidate/") return "/candidate";
+  if (/^\/candidate\/assessment\/\d+$/.test(value)) return value;
+  return "/candidate";
+}
+
 export function publicError(error: unknown) {
-  if (error instanceof AppError) return { status: error.status, message: error.message };
+  if (error instanceof AppError) {
+    return { status: error.status, message: error.message, headers: error.headers };
+  }
   console.error("Server operation failed", error);
-  return { status: 500, message: "Something went wrong. Please try again." };
+  return { status: 500, message: "Something went wrong. Please try again.", headers: {} };
 }
