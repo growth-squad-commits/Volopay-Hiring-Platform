@@ -6,6 +6,7 @@ async function source(path) {
 }
 
 const migration = await source("supabase/migrations/202607280008_phase4_exam_attempts.sql");
+const activeCandidateGuardMigration = await source("supabase/migrations/202607280009_phase4_active_candidate_guard.sql");
 const runner = await source("src/components/assessment-runner.tsx");
 const workspace = await source("src/components/candidate-workspace.tsx");
 const offlineQueue = await source("src/lib/client/answer-queue.ts");
@@ -34,9 +35,13 @@ assert.match(migration, /for update skip locked/);
 assert.match(migration, /'10 seconds'/);
 assert.match(migration, /revoke insert, update, delete on public\.candidate_responses from authenticated/);
 assert.match(migration, /create or replace function private\.guard_candidate_response_write/);
+assert.match(migration, /create or replace function private\.guard_candidate_self_update/);
 assert.match(migration, /current_setting\('app\.phase4_internal', true\) = 'on'/);
 assert.match(migration, /perform set_config\('app\.phase4_internal', 'on', true\);\s+insert into public\.candidate_responses/);
+assert.match(activeCandidateGuardMigration, /create or replace function private\.guard_candidate_self_update/);
+assert.match(activeCandidateGuardMigration, /current_setting\('app\.phase4_internal', true\) = 'on'/);
 assert.doesNotMatch(migration, /security definer/);
+assert.doesNotMatch(activeCandidateGuardMigration, /security definer/);
 
 assert.match(startRoute, /requireCandidate\(\)/);
 assert.match(startRoute, /start_exam_attempt_internal/);
