@@ -33,6 +33,9 @@ assert.match(migration, /phase4-auto-submit-expired-attempts/);
 assert.match(migration, /for update skip locked/);
 assert.match(migration, /'10 seconds'/);
 assert.match(migration, /revoke insert, update, delete on public\.candidate_responses from authenticated/);
+assert.match(migration, /create or replace function private\.guard_candidate_response_write/);
+assert.match(migration, /current_setting\('app\.phase4_internal', true\) = 'on'/);
+assert.match(migration, /perform set_config\('app\.phase4_internal', 'on', true\);\s+insert into public\.candidate_responses/);
 assert.doesNotMatch(migration, /security definer/);
 
 assert.match(startRoute, /requireCandidate\(\)/);
