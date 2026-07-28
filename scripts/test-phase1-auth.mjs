@@ -17,7 +17,7 @@ const authHelper = await source("src/lib/server/auth.ts");
 const rateLimit = await source("src/lib/server/rate-limit.ts");
 const activeMigration = await source("supabase/migrations/202607280003_candidate_active_access.sql");
 const expiryMigration = await source("supabase/migrations/202607280004_candidate_access_expiry.sql");
-const consolidatedPolicies = await source("supabase/migrations/202607280004_consolidate_candidate_rls.sql");
+const consolidatedPolicies = await source("supabase/migrations/202607280005_consolidate_candidate_rls.sql");
 
 assert.doesNotMatch(candidateLogin, /type="password"|passwordLogin|portal:\s*"candidate"/);
 assert.match(candidateLogin, /\/api\/auth\/magic-link/);
