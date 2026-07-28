@@ -30,7 +30,16 @@ export function isEmail(value: string) {
 }
 
 export function requestOrigin(request: NextRequest) {
-  return (process.env.NEXT_PUBLIC_SITE_URL?.trim() || request.nextUrl.origin).replace(/\/+$/, "");
+  const configuredOrigin = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (configuredOrigin) return configuredOrigin.replace(/\/+$/, "");
+
+  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+  const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  if (forwardedHost && (forwardedProto === "https" || forwardedProto === "http")) {
+    return `${forwardedProto}://${forwardedHost}`.replace(/\/+$/, "");
+  }
+
+  return request.nextUrl.origin.replace(/\/+$/, "");
 }
 
 export function safeCandidatePath(value: string | null) {
