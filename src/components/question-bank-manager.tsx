@@ -123,7 +123,7 @@ export function QuestionBankManager({ email }: { email: string }) {
     let rows: (string | number | boolean | Date | null)[][];
     if (file.name.toLowerCase().endsWith(".xlsx")) {
       const { default: read } = await import("read-excel-file/browser");
-      rows = await read(file) as typeof rows;
+      rows = await read(file) as unknown as typeof rows;
     } else rows = parseCsv(await file.text());
 
     const questions = rows.slice(1).map((row) => ({
