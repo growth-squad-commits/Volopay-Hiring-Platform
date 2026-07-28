@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     const admin = createAdminClient();
     const { data: assignment } = await admin.from("candidates").select("id")
-      .eq("email", email).limit(1).maybeSingle();
+      .eq("email", email).eq("is_active", true).limit(1).maybeSingle();
     if (assignment) {
       const { error } = await admin.auth.signInWithOtp({
         email,
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { ok: true, message: "If the email is eligible, a sign-in link has been sent." },
+      { ok: true, message: "If the email has an active assessment, a sign-in link has been sent." },
       { headers: { "cache-control": "no-store" } },
     );
   } catch (error) {
