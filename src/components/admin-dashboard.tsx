@@ -6,7 +6,7 @@ import { Brand } from "@/components/brand";
 import { createClient } from "@/lib/supabase/client";
 import type { Assessment, Candidate } from "@/lib/types";
 
-type Modal = "assessment" | "candidate" | "import" | "review" | null;
+type Modal = "assessment" | "candidate" | "import" | "review" | "access" | null;
 type DraftQuestion = {
   title: string; prompt: string; points: number; response_type: "written" | "link" | "file_upload";
   is_required: boolean; written_answer_type: "short" | "long"; word_limit: number | null;
@@ -127,6 +127,19 @@ export function AdminDashboard({ email }: { email: string }) {
     setBusy(false);
   }
 
+  async function saveAccess(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); if (!reviewCandidate) return;
+    setBusy(true); setError("");
+    const form = new FormData(event.currentTarget);
+    const rawExpiry = String(form.get("access_expires_at") ?? "").trim();
+    const { error: updateError } = await supabase.from("candidates").update({
+      is_active: form.get("is_active") === "true",
+      access_expires_at: rawExpiry ? new Date(rawExpiry).toISOString() : null,
+    }).eq("id", reviewCandidate.id);
+    if (updateError) setError(updateError.message); else { setModal(null); notify("Candidate access updated."); await load(); }
+    setBusy(false);
+  }
+
   async function exportCandidates() {
     const escape = (value: unknown) => `"${String(value ?? "").replaceAll('"', '""')}"`;
     const csv = [
@@ -149,8 +162,8 @@ export function AdminDashboard({ email }: { email: string }) {
             <div className="counts"><span><b>{a.candidates.length}</b>Candidates</span><span><b>{a.candidates.filter((c) => ["submitted","reviewed"].includes(c.status)).length}</b>Submitted</span></div><em className={`status ${a.status}`}>{a.status}</em>
           </button>)}</div>}
           <div className="section-title candidate-title"><h2>Candidates {selected ? `· ${selected.title}` : ""}</h2><div><button className="button secondary small" disabled={!selected} onClick={() => setModal("import")}><FileSpreadsheet size={14}/> Import Excel</button><button className="button primary small" disabled={!selected} onClick={() => setModal("candidate")}><Users size={14}/> Add candidate</button></div></div>
-          <div className="table-wrap"><table><thead><tr><th>Candidate</th><th>Status</th><th>Score</th><th>Decision</th><th>Submission</th></tr></thead><tbody>
-            {(selected?.candidates ?? []).map((c) => <tr key={c.id}><td><strong>{c.full_name}</strong><small>{c.email}</small></td><td><em className={`status ${c.status}`}>{c.status.replaceAll("_"," ")}</em></td><td>{c.score ?? "—"}</td><td>{c.decision}</td><td><button className="text-button" disabled={!["submitted","reviewed"].includes(c.status)} onClick={() => { setReviewCandidate(c); setModal("review"); }}>View & review</button></td></tr>)}
+          <div className="table-wrap"><table><thead><tr><th>Candidate</th><th>Status</th><th>Access</th><th>Score</th><th>Decision</th><th>Submission</th></tr></thead><tbody>
+            {(selected?.candidates ?? []).map((c) => <tr key={c.id}><td><strong>{c.full_name}</strong><small>{c.email}</small></td><td><em className={`status ${c.status}`}>{c.status.replaceAll("_"," ")}</em></td><td><button className="text-button" onClick={() => { setReviewCandidate(c); setModal("access"); }}>{c.is_active && (!c.access_expires_at || new Date(c.access_expires_at).getTime() > Date.now()) ? "Active" : "Inactive"}</button></td><td>{c.score ?? "—"}</td><td>{c.decision}</td><td><button className="text-button" disabled={!['submitted','reviewed'].includes(c.status)} onClick={() => { setReviewCandidate(c); setModal("review"); }}>View & review</button></td></tr>)}
           </tbody></table>{selected && !selected.candidates.length && <div className="empty">No candidates yet.</div>}</div>
         </section>
         <aside className="detail">{selected ? <><em className={`status ${selected.status}`}>{selected.status}</em><h2>{selected.title}</h2><p>{selected.instructions || selected.description}</p><dl><div><dt>Tasks</dt><dd>{selected.questions.length}</dd></div><div><dt>Duration</dt><dd>{selected.duration_minutes} min</dd></div><div><dt>Points</dt><dd>{selected.total_points}</dd></div></dl><h3>Questions</h3>{selected.questions.sort((a,b)=>a.sort_order-b.sort_order).map((q) => <div className="question-mini" key={q.id}><strong>{q.title}</strong><span>{q.response_type.replace("_"," ")} · {q.points} pts</span></div>)}</> : <div className="empty">Select an assessment.</div>}</aside></div>
@@ -163,6 +176,7 @@ export function AdminDashboard({ email }: { email: string }) {
         <button className="button primary full" disabled={busy}>Create assessment</button></form>}
       {modal === "candidate" && <form onSubmit={addCandidate}><h2>Add candidate</h2><Field name="name" label="Full name" required/><Field name="email" label="Email" type="email" required/><Field name="phone" label="Phone"/><button className="button primary full" disabled={busy}>Add candidate</button></form>}
       {modal === "import" && <div><h2>Import candidates</h2><p>Upload an XLSX file with Name, Email and Phone in the first three columns.</p><label className="upload"><FileSpreadsheet/><span>Choose Excel file</span><input type="file" accept=".xlsx" onChange={(e)=>e.target.files?.[0]&&void importCandidates(e.target.files[0])}/></label></div>}
+      {modal === "access" && reviewCandidate && <form onSubmit={saveAccess}><h2>Candidate access</h2><p>{reviewCandidate.full_name} · {reviewCandidate.email}</p><label>Access status<select name="is_active" defaultValue={String(reviewCandidate.is_active)}><option value="true">Active</option><option value="false">Inactive</option></select></label><Field name="access_expires_at" label="Access expires at" type="datetime-local" defaultValue={reviewCandidate.access_expires_at ? new Date(new Date(reviewCandidate.access_expires_at).getTime() - new Date(reviewCandidate.access_expires_at).getTimezoneOffset() * 60000).toISOString().slice(0,16) : ""}/><p>Leave the expiry empty for no additional candidate-specific expiry.</p><button className="button primary full" disabled={busy}>Save access</button></form>}
       {modal === "review" && reviewCandidate && <form onSubmit={saveDecision}><h2>{reviewCandidate.full_name}</h2><p>{reviewCandidate.email}</p><div className="responses">{selected?.questions.sort((a,b)=>a.sort_order-b.sort_order).map((q) => { const r = reviewCandidate.responses?.find((x)=>x.question_id===q.id); return <div key={q.id}><strong>{q.title}</strong><p>{r?.response_text || r?.response_url || r?.file_name || "No answer"}</p>{r?.response_url && <a href={r.response_url} target="_blank" rel="noreferrer">Open link</a>}</div>; })}</div><div className="form-grid"><Field name="score" label={`Score / ${selected?.total_points ?? 100}`} type="number" defaultValue={String(reviewCandidate.score ?? "")} required/><label>Decision<select name="decision" defaultValue={reviewCandidate.decision}><option value="pending">Pending</option><option value="shortlisted">Shortlisted</option><option value="on_hold">On hold</option><option value="rejected">Rejected</option></select></label></div><button className="button primary full" disabled={busy}>Save review</button></form>}
     </div></div>}
   </main>;
