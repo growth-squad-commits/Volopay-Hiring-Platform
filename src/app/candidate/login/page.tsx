@@ -11,9 +11,17 @@ export default function CandidateLoginPage() {
 
   useEffect(() => {
     const reason = new URLSearchParams(window.location.search).get("error");
-    if (reason === "access_expired") setError("Your assessment access has expired. Please contact the hiring team.");
-    else if (reason === "no_active_assignment") setError("No active assessment is available for this email.");
-    else if (reason === "invalid_or_expired_link") setError("This secure sign-in link is invalid or has expired. Request a new link below.");
+    const message =
+      reason === "access_expired"
+        ? "Your assessment access has expired. Please contact the hiring team."
+        : reason === "no_active_assignment"
+          ? "No active assessment is available for this email."
+          : reason === "invalid_or_expired_link"
+            ? "This secure sign-in link is invalid or has expired. Request a new link below."
+            : "";
+    if (!message) return;
+    const timeout = window.setTimeout(() => setError(message), 0);
+    return () => window.clearTimeout(timeout);
   }, []);
 
   async function requestMagicLink(event: FormEvent<HTMLFormElement>) {
