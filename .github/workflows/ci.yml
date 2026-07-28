@@ -23,16 +23,16 @@ jobs:
       - run: npm ci
       - run: npm run test:phase1
       - run: npm run test:phase2
-      - name: Run ESLint and capture report
-        id: lint
+      - run: npm run lint
+      - name: Run TypeScript and capture report
+        id: typecheck
         continue-on-error: true
-        run: npx eslint . --format json --output-file eslint-report.json
+        run: npx tsc --noEmit --pretty false > tsc-report.txt 2>&1
       - uses: actions/upload-artifact@v4
         with:
-          name: eslint-report
-          path: eslint-report.json
-      - name: Fail on lint errors
-        if: steps.lint.outcome == 'failure'
+          name: tsc-report
+          path: tsc-report.txt
+      - name: Fail on TypeScript errors
+        if: steps.typecheck.outcome == 'failure'
         run: exit 1
-      - run: npx tsc --noEmit
       - run: npm run build
