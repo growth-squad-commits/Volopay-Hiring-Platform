@@ -49,7 +49,10 @@ export function QuestionBankManager({ email }: { email: string }) {
     setSelectedId((value) => value && next.some((bank) => bank.id === value) ? value : next[0]?.id ?? null);
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const timeout = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timeout);
+  }, [load]);
   const selected = banks.find((bank) => bank.id === selectedId) ?? null;
   function flash(message: string) { setNotice(message); window.setTimeout(() => setNotice(""), 3000); }
   async function signOut() { await supabase.auth.signOut(); window.location.replace("/admin/login"); }
