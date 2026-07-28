@@ -28,6 +28,11 @@ type CandidateImportRow = {
   source: string;
   access_expires_at: string | null;
 };
+type BankItem = {
+  id: number; title: string; prompt: string; marks: number;
+  response_type: DraftQuestion["response_type"];
+};
+type QuestionBank = { id: number; title: string; subject: string; items: BankItem[] };
 
 const freshQuestion = (): DraftQuestion => ({
   title: "",
@@ -62,6 +67,9 @@ export function AdminDashboard({ email }: { email: string }) {
   const [reviewCandidate, setReviewCandidate] = useState<Candidate | null>(null);
   const [modal, setModal] = useState<Modal>(null);
   const [questions, setQuestions] = useState<DraftQuestion[]>([freshQuestion()]);
+  const [questionBanks, setQuestionBanks] = useState<QuestionBank[]>([]);
+  const [selectedBankId, setSelectedBankId] = useState<number | null>(null);
+  const [selectedBankItemIds, setSelectedBankItemIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -81,6 +89,13 @@ export function AdminDashboard({ email }: { email: string }) {
       setAssessments(next);
       setSelectedId((current) => current && next.some((item) => item.id === current) ? current : next[0]?.id ?? null);
     }
+    const bankResponse = await fetch("/api/admin/question-banks", { cache: "no-store" });
+    const bankResult = await bankResponse.json() as { banks?: QuestionBank[]; error?: string };
+    if (bankResponse.ok) {
+      const banks = bankResult.banks ?? [];
+      setQuestionBanks(banks);
+      setSelectedBankId((current) => current && banks.some((bank) => bank.id === current) ? current : banks[0]?.id ?? null);
+    } else if (!loadError) setError(bankResult.error ?? "Could not load question banks.");
     setLoading(false);
   }, []);
 
@@ -115,51 +130,35 @@ export function AdminDashboard({ email }: { email: string }) {
     const from = new Date(String(form.get("available_from")));
     const until = new Date(String(form.get("available_until")));
 
-    if (!(until > from) || questions.some((question) => !question.title.trim() || !question.prompt.trim())) {
+    const customQuestions = questions.filter((question) => question.title.trim() || question.prompt.trim());
+    if (!(until > from) || customQuestions.some((question) => !question.title.trim() || !question.prompt.trim()) || (!customQuestions.length && !selectedBankItemIds.length)) {
       setError("Add valid dates and complete every task.");
       setBusy(false);
       return;
     }
 
-    const total = questions.reduce((sum, question) => sum + Number(question.points), 0);
-    const { data: assessment, error: assessmentError } = await supabase.from("assessments").insert({
-      title: String(form.get("title")).trim(),
-      description: String(form.get("description")).trim(),
-      instructions: String(form.get("instructions")).trim(),
-      duration_minutes: Number(form.get("duration")),
-      total_points: total,
-      status: String(form.get("status")),
-      available_from: from.toISOString(),
-      available_until: until.toISOString(),
-    }).select("id").single();
+    const response = await fetch("/api/admin/assessments", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        title: form.get("title"),
+        description: form.get("description"),
+        instructions: form.get("instructions"),
+        durationMinutes: Number(form.get("duration")),
+        status: form.get("status"),
+        availableFrom: from.toISOString(),
+        availableUntil: until.toISOString(),
+        questions: customQuestions,
+        bankItemIds: selectedBankItemIds,
+      }),
+    });
+    const result = await response.json() as { error?: string };
 
-    if (assessmentError || !assessment) {
-      setError(assessmentError?.message ?? "Could not create assessment.");
-      setBusy(false);
-      return;
-    }
-
-    const { error: questionError } = await supabase.from("assessment_questions").insert(
-      questions.map((question, index) => ({
-        assessment_id: assessment.id,
-        title: question.title.trim(),
-        prompt: question.prompt.trim(),
-        points: Number(question.points),
-        sort_order: index,
-        response_type: question.response_type,
-        is_required: question.is_required,
-        written_answer_type: question.response_type === "written" ? question.written_answer_type : null,
-        word_limit: question.response_type === "written" ? question.word_limit : null,
-        allowed_file_types: question.response_type === "file_upload" ? question.allowed_file_types : null,
-        maximum_file_size_mb: question.response_type === "file_upload" ? question.maximum_file_size_mb : null,
-        link_guidance: question.response_type === "link" ? question.link_guidance : null,
-      })),
-    );
-
-    if (questionError) setError(questionError.message);
+    if (!response.ok) setError(result.error ?? "Could not create assessment.");
     else {
       setModal(null);
       setQuestions([freshQuestion()]);
+      setSelectedBankItemIds([]);
       notify("Assessment created.");
       await load();
     }
@@ -327,7 +326,10 @@ export function AdminDashboard({ email }: { email: string }) {
       </div>
     </section>
     {modal && <div className="modal-backdrop"><div className="modal"><button className="modal-close" onClick={() => setModal(null)}><X/></button>
-      {modal === "assessment" && <form onSubmit={createAssessment}><h2>Create assessment</h2><div className="form-grid"><Field name="title" label="Title" required/><Field name="duration" label="Duration (minutes)" type="number" defaultValue="45" required/><Field name="available_from" label="Available from" type="datetime-local" required/><Field name="available_until" label="Available until" type="datetime-local" required/></div><Field name="description" label="Description"/><label>Instructions<textarea name="instructions" required/></label><label>Status<select name="status" defaultValue="published"><option value="draft">Draft</option><option value="published">Published</option></select></label><div className="question-head"><h3>Tasks</h3><button type="button" className="button secondary small" onClick={() => setQuestions((value) => [...value, freshQuestion()])}><Plus size={14}/> Add task</button></div>{questions.map((question,index)=><div className="question-editor" key={index}><div><strong>Task {index+1}</strong>{questions.length>1&&<button type="button" onClick={()=>setQuestions((value)=>value.filter((_,itemIndex)=>itemIndex!==index))}>Remove</button>}</div><input placeholder="Task title" value={question.title} onChange={(event)=>setQuestions((value)=>value.map((item,itemIndex)=>itemIndex===index?{...item,title:event.target.value}:item))}/><textarea placeholder="Question or task instructions" value={question.prompt} onChange={(event)=>setQuestions((value)=>value.map((item,itemIndex)=>itemIndex===index?{...item,prompt:event.target.value}:item))}/><div className="form-grid"><label>Answer type<select value={question.response_type} onChange={(event)=>setQuestions((value)=>value.map((item,itemIndex)=>itemIndex===index?{...item,response_type:event.target.value as DraftQuestion['response_type']}:item))}><option value="written">Written answer</option><option value="link">Link</option><option value="file_upload">File upload</option></select></label><label>Points<input type="number" min="1" value={question.points} onChange={(event)=>setQuestions((value)=>value.map((item,itemIndex)=>itemIndex===index?{...item,points:Number(event.target.value)}:item))}/></label></div></div>)}<button className="button primary full" disabled={busy}>Create assessment</button></form>}
+      {modal === "assessment" && <form onSubmit={createAssessment}><h2>Create assessment</h2><div className="form-grid"><Field name="title" label="Title" required/><Field name="duration" label="Duration (minutes)" type="number" defaultValue="45" required/><Field name="available_from" label="Available from" type="datetime-local" required/><Field name="available_until" label="Available until" type="datetime-local" required/></div><Field name="description" label="Description"/><label>Instructions<textarea name="instructions" required/></label><label>Status<select name="status" defaultValue="published"><option value="draft">Draft</option><option value="published">Published</option></select></label>
+        <div className="question-head"><h3>Add from question bank</h3></div>
+        {questionBanks.length ? <><label>Question bank<select value={selectedBankId ?? ""} onChange={(event) => setSelectedBankId(Number(event.target.value))}>{questionBanks.map((bank) => <option key={bank.id} value={bank.id}>{bank.title} · {bank.subject}</option>)}</select></label><div className="responses">{questionBanks.find((bank) => bank.id === selectedBankId)?.items.map((item) => <label key={item.id}><input type="checkbox" checked={selectedBankItemIds.includes(item.id)} onChange={(event) => setSelectedBankItemIds((current) => event.target.checked ? [...current, item.id] : current.filter((id) => id !== item.id))}/>{item.title} · {item.response_type.replace("_", " ")} · {item.marks} points</label>)}</div></> : <p>No question banks yet. You can add tasks below.</p>}
+        <div className="question-head"><h3>Custom tasks</h3><button type="button" className="button secondary small" onClick={() => setQuestions((value) => [...value, freshQuestion()])}><Plus size={14}/> Add task</button></div>{questions.map((question,index)=><div className="question-editor" key={index}><div><strong>Task {index+1}</strong>{questions.length>1&&<button type="button" onClick={()=>setQuestions((value)=>value.filter((_,itemIndex)=>itemIndex!==index))}>Remove</button>}</div><input placeholder="Task title" value={question.title} onChange={(event)=>setQuestions((value)=>value.map((item,itemIndex)=>itemIndex===index?{...item,title:event.target.value}:item))}/><textarea placeholder="Question or task instructions" value={question.prompt} onChange={(event)=>setQuestions((value)=>value.map((item,itemIndex)=>itemIndex===index?{...item,prompt:event.target.value}:item))}/><div className="form-grid"><label>Answer type<select value={question.response_type} onChange={(event)=>setQuestions((value)=>value.map((item,itemIndex)=>itemIndex===index?{...item,response_type:event.target.value as DraftQuestion['response_type']}:item))}><option value="written">Written answer</option><option value="link">Link</option><option value="file_upload">File upload</option></select></label><label>Points<input type="number" min="1" value={question.points} onChange={(event)=>setQuestions((value)=>value.map((item,itemIndex)=>itemIndex===index?{...item,points:Number(event.target.value)}:item))}/></label></div></div>)}<button className="button primary full" disabled={busy}>Create assessment</button></form>}
       {modal === "candidate" && <form onSubmit={addCandidate}><h2>Add candidate</h2><Field name="name" label="Full name" required/><Field name="email" label="Email" type="email" required/><Field name="phone" label="Phone"/><Field name="access_expires_at" label="Access expires at" type="datetime-local" required/><button className="button primary full" disabled={busy}>Add candidate</button></form>}
       {modal === "import" && <div><h2>Import candidates</h2><p>Upload an XLSX file with columns: Name, Email, Phone, Access Expires At. Expiry is optional.</p><label className="upload"><FileSpreadsheet/><span>Choose Excel file</span><input type="file" accept=".xlsx" onChange={(event) => event.target.files?.[0] && void importCandidates(event.target.files[0])}/></label></div>}
       {modal === "access" && reviewCandidate && <form onSubmit={saveAccess}><h2>Candidate access</h2><p>{reviewCandidate.full_name} · {reviewCandidate.email}</p><label>Access status<select name="is_active" defaultValue={String(reviewCandidate.is_active)}><option value="true">Active</option><option value="false">Inactive</option></select></label><Field name="access_expires_at" label="Access expires at" type="datetime-local" defaultValue={toLocalDateTime(reviewCandidate.access_expires_at)}/><p>Leave the expiry empty for no candidate-specific expiry.</p><button className="button primary full" disabled={busy}>Save access</button></form>}

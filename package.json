@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test:phase1": "node scripts/test-phase1-auth.mjs",
     "test:phase2": "node scripts/test-phase2-question-banks.mjs",
+    "test:phase3": "node scripts/test-phase3-exam-builder.mjs",
     "check:architecture": "node scripts/check-architecture.mjs",
     "seed:demo": "node scripts/seed-demo.mjs"
   },

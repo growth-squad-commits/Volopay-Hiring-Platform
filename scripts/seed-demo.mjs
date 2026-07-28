@@ -40,7 +40,7 @@ if (!assessment) {
   const result = await supabase.from("assessments").insert({
     title: "Sample Sales Assessment", description: "A production-connected assessment for testing the candidate workflow.",
     instructions: "Complete all required tasks. Your responses save automatically.",
-    status: "published", duration_minutes: 45, total_points: 100, available_from: now.toISOString(), available_until: until.toISOString(),
+    status: "draft", duration_minutes: 45, total_points: 100, available_from: now.toISOString(), available_until: until.toISOString(),
   }).select("id").single();
   if (result.error) throw result.error;
   assessment = result.data;
@@ -50,6 +50,8 @@ if (!assessment) {
     { assessment_id: assessment.id, title: "Supporting file", prompt: "Upload any supporting PDF or DOCX file.", points: 30, sort_order: 2, response_type: "file_upload", allowed_file_types: ["pdf","docx"], maximum_file_size_mb: 10, is_required: false },
   ]);
   if (error) throw error;
+  const { error: publishError } = await supabase.from("assessments").update({ status: "published" }).eq("id", assessment.id);
+  if (publishError) throw publishError;
 }
 const { error: candidateError } = await supabase.from("candidates").upsert({
   assessment_id: assessment.id, auth_user_id: candidateUser.id, full_name: "Sample Candidate",

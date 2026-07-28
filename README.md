@@ -1,6 +1,6 @@
 # Volopay Hiring Platform
 
-A production-oriented Next.js application containing one linked admin and candidate workflow. It is a standard Next.js App Router project and can be imported directly into Vercel.
+A production-oriented Next.js application containing one linked admin and candidate workflow. It is a standard Next.js App Router project deployed behind Cloudflare.
 
 ## Application URLs
 
@@ -21,8 +21,9 @@ Both portals live in this one application. Supabase links them through `assessme
 - Written, link and file-upload responses
 - Assessment availability dates and fixed attempt duration
 - Manual candidate creation and Excel import
-- Candidate email/password login
-- Supabase magic-link candidate login, ready for production invitations
+- Candidate magic-link-only login
+- Candidate invitation, assignment, activation and access-expiry controls
+- Reusable question banks with CSV/XLSX import
 - Candidate-only assigned assessment access
 - Autosaved candidate responses
 - Private Supabase Storage uploads
@@ -35,11 +36,20 @@ Google OAuth is intentionally not included.
 
 ## 1. Create or select a Supabase project
 
-Open the Supabase SQL editor and run:
+Apply every SQL file in `supabase/migrations` in filename order. Do not apply only the initial schema.
 
-`supabase/migrations/202607260001_initial_schema.sql`
+Current order:
 
-The migration creates the tables, relationships, indexes, row-level security policies, timer enforcement and private upload bucket.
+1. `202607260001_initial_schema.sql`
+2. `202607280002_auth_rate_limits.sql`
+3. `202607280003_candidate_active_access.sql`
+4. `202607280004_candidate_access_expiry.sql`
+5. `202607280005_consolidate_candidate_rls.sql`
+6. `202607280005_precise_admin_rls.sql`
+7. `202607280006_question_banks.sql`
+8. `202607280007_exam_builder_snapshots.sql`
+
+The migrations create the application tables, indexes, access controls, rate limits, candidate expiry controls, question banks, timer enforcement and private upload bucket. Record applied migrations in the target environment and never skip a file.
 
 ## 2. Configure environment variables
 
@@ -72,7 +82,7 @@ npm run seed:demo
 This creates:
 
 - The admin account from `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD`
-- The candidate account from `DEMO_CANDIDATE_EMAIL` and `DEMO_CANDIDATE_PASSWORD`
+- A candidate Auth account used only by the seed script; candidate UI access remains magic-link-only
 - A published sample assessment assigned to that candidate
 
 The seed script is idempotent and can be run again.
@@ -83,19 +93,18 @@ The seed script is idempotent and can be run again.
 npm run dev
 ```
 
-Open the admin portal, create or edit an assessment, add a candidate and then sign into the candidate portal with that exact candidate email.
+Open the admin portal, create an assessment, add a candidate and request a magic link using that exact candidate email.
 
-## 5. Deploy to Vercel
+## 5. Deploy with Cloudflare
 
-1. Push this folder to one GitHub repository.
-2. In Vercel, select **Add New → Project**.
-3. Import the repository.
-4. Vercel automatically detects **Next.js**. Do not set a custom output directory.
-5. Add every environment variable shown above.
-6. Change `NEXT_PUBLIC_SITE_URL` to your Vercel production URL.
-7. Deploy.
+1. Push this repository to GitHub.
+2. Connect the repository to the Cloudflare deployment used for the hiring platform.
+3. Configure the Node.js compatibility settings required by the Next.js adapter.
+4. Add every environment variable shown above as encrypted Cloudflare secrets or environment variables.
+5. Set `NEXT_PUBLIC_SITE_URL` to the canonical Cloudflare/custom-domain production URL.
+6. Deploy from the tested `main` commit.
 
-No Cloudflare or ChatGPT Sites configuration is present in this project.
+Do not configure a separate Vercel deployment for this application.
 
 ## 6. Configure Supabase URLs
 
@@ -109,10 +118,10 @@ Magic links use `/auth/callback` and then redirect candidates to `/candidate`.
 
 ## 7. Add your custom domain
 
-In Vercel Project Settings → Domains:
+In the relevant Cloudflare project:
 
-1. Add your domain, for example `hiring.volopay.com`.
-2. Add the DNS record Vercel displays.
+1. Add the production hostname, for example `hiring.volopay.com`.
+2. Complete the Cloudflare DNS binding.
 3. Change `NEXT_PUBLIC_SITE_URL` to `https://hiring.volopay.com`.
 4. Add `https://hiring.volopay.com/auth/callback` to Supabase Redirect URLs.
 5. Redeploy after changing the environment variable.
@@ -121,11 +130,11 @@ In Vercel Project Settings → Domains:
 
 Use an `.xlsx` file with:
 
-| Name | Email | Phone |
-|---|---|---|
-| Sample Candidate | candidate@example.com | +91... |
+| Name | Email | Phone | Access Expires At |
+|---|---|---|---|
+| Sample Candidate | candidate@example.com | +91... | 2026-08-31T18:00:00+05:30 |
 
-The first row is treated as the header.
+The first row is treated as the header. `Access Expires At` is optional and must be a valid spreadsheet date or ISO-style date/time when supplied.
 
 ## Production checklist
 
