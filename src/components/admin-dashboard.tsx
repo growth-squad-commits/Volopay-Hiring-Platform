@@ -265,6 +265,18 @@ export function AdminDashboard({ email }: { email: string }) {
     setBusy(false);
   }
 
+  async function openSubmissionFile(path: string) {
+    setError("");
+    const { data, error: signedUrlError } = await supabase.storage
+      .from("candidate-submissions")
+      .createSignedUrl(path, 300);
+    if (signedUrlError || !data?.signedUrl) {
+      setError(signedUrlError?.message ?? "Could not open the submitted file.");
+      return;
+    }
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+  }
+
   async function saveAccess(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!reviewCandidate) return;
@@ -335,7 +347,7 @@ export function AdminDashboard({ email }: { email: string }) {
       {modal === "candidate" && <form onSubmit={addCandidate}><h2>Add candidate</h2><Field name="name" label="Full name" required/><Field name="email" label="Email" type="email" required/><Field name="phone" label="Phone"/><Field name="access_expires_at" label="Access expires at" type="datetime-local" required/><button className="button primary full" disabled={busy}>Add candidate</button></form>}
       {modal === "import" && <div><h2>Import candidates</h2><p>Upload an XLSX file with columns: Name, Email, Phone, Access Expires At. Expiry is optional.</p><label className="upload"><FileSpreadsheet/><span>Choose Excel file</span><input type="file" accept=".xlsx" onChange={(event) => event.target.files?.[0] && void importCandidates(event.target.files[0])}/></label></div>}
       {modal === "access" && reviewCandidate && <form onSubmit={saveAccess}><h2>Candidate access</h2><p>{reviewCandidate.full_name} · {reviewCandidate.email}</p><label>Access status<select name="is_active" defaultValue={String(reviewCandidate.is_active)}><option value="true">Active</option><option value="false">Inactive</option></select></label><Field name="access_expires_at" label="Access expires at" type="datetime-local" defaultValue={toLocalDateTime(reviewCandidate.access_expires_at)}/><p>Leave the expiry empty for no candidate-specific expiry.</p><button className="button primary full" disabled={busy}>Save access</button></form>}
-      {modal === "review" && reviewCandidate && <form onSubmit={saveDecision}><h2>{reviewCandidate.full_name}</h2><p>{reviewCandidate.email}</p><div className="responses">{selected?.questions.sort((a,b)=>a.sort_order-b.sort_order).map((question)=>{const response=reviewCandidate.responses?.find((item)=>item.question_id===question.id);return <div key={question.id}><strong>{question.title}</strong><p>{response?.response_text||response?.response_url||response?.file_name||"No answer"}</p>{response?.response_url&&<a href={response.response_url} target="_blank" rel="noreferrer">Open link</a>}</div>;})}</div><div className="form-grid"><Field name="score" label={`Score / ${selected?.total_points??100}`} type="number" defaultValue={String(reviewCandidate.score??"")} required/><label>Decision<select name="decision" defaultValue={reviewCandidate.decision}><option value="pending">Pending</option><option value="shortlisted">Shortlisted</option><option value="on_hold">On hold</option><option value="rejected">Rejected</option></select></label></div><button className="button primary full" disabled={busy}>Save review</button></form>}
+      {modal === "review" && reviewCandidate && <form onSubmit={saveDecision}><h2>{reviewCandidate.full_name}</h2><p>{reviewCandidate.email}</p><div className="responses">{selected?.questions.sort((a,b)=>a.sort_order-b.sort_order).map((question)=>{const response=reviewCandidate.responses?.find((item)=>item.question_id===question.id);return <div key={question.id}><strong>{question.title}</strong><p>{response?.response_text||response?.response_url||response?.file_name||"No answer"}</p>{response?.response_url&&<a href={response.response_url} target="_blank" rel="noreferrer">Open link</a>}{response?.file_path&&<button type="button" className="response-link" onClick={()=>void openSubmissionFile(response.file_path!)}>Open submitted file</button>}</div>;})}</div><div className="form-grid"><Field name="score" label={`Score / ${selected?.total_points??100}`} type="number" defaultValue={String(reviewCandidate.score??"")} required/><label>Decision<select name="decision" defaultValue={reviewCandidate.decision}><option value="pending">Pending</option><option value="shortlisted">Shortlisted</option><option value="on_hold">On hold</option><option value="rejected">Rejected</option></select></label></div><button className="button primary full" disabled={busy}>Save review</button></form>}
     </div></div>}
   </main>;
 }

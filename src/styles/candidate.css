@@ -145,6 +145,110 @@
   font-size: 12px;
 }
 
+.submitted a,
+.response-link {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 680;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.submission-content {
+  width: min(820px, calc(100% - 48px));
+  margin: auto;
+  padding: 54px 0 92px;
+}
+
+.submission-check {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  margin-bottom: 16px;
+  border-radius: 50%;
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.submission-content h1 {
+  margin: 8px 0 10px;
+  font-family: var(--font-display);
+  font-size: clamp(38px, 5vw, 54px);
+  font-weight: 400;
+  letter-spacing: -0.05em;
+}
+
+.submission-content > p {
+  margin: 0 0 24px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.submission-meta {
+  display: flex;
+  gap: 28px;
+  margin: 0 0 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 15px 18px;
+  background: var(--surface);
+}
+
+.submission-meta dt,
+.submission-responses article > span {
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.submission-meta dd {
+  margin: 4px 0 0;
+  font-size: 11px;
+  font-weight: 680;
+  text-transform: capitalize;
+}
+
+.submission-responses {
+  display: grid;
+  gap: 12px;
+}
+
+.submission-responses article {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  background: var(--surface);
+}
+
+.submission-responses h2 {
+  margin: 7px 0 12px;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 400;
+}
+
+.submission-responses p {
+  margin: 0 0 9px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.submission-responses a {
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 680;
+  text-underline-offset: 3px;
+}
+
 .runner-header {
   padding-right: max(24px, calc((100vw - 920px) / 2));
   padding-left: max(24px, calc((100vw - 920px) / 2));
@@ -433,9 +537,16 @@
   }
 
   .candidate-content,
-  .runner-content {
+  .runner-content,
+  .submission-content {
     width: calc(100% - 30px);
     padding-top: 34px;
+  }
+
+  .submission-meta {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
   }
 
   .candidate-content > h1 {

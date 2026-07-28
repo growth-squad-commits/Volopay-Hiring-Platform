@@ -54,7 +54,7 @@ export function AssessmentRunner({ candidateId }: { candidateId: number }) {
     if(!candidate)return;const missing=candidate.assessment.questions.filter((q)=>q.is_required&&!(answers[q.id]?.response_text?.trim()||answers[q.id]?.response_url?.trim()||answers[q.id]?.file_path));
     if(missing.length){setError(`Complete ${missing.length} required task${missing.length>1?"s":""}.`);return}setSubmitting(true);
     for(const q of candidate.assessment.questions){clearTimeout(timers.current[q.id]);if(!await persist(q.id,answers[q.id]??blank(q.id))){setSubmitting(false);return}}
-    const {error:submitError}=await supabase.from("candidates").update({status:"submitted"}).eq("id",candidateId).eq("status","in_progress");if(submitError){setError(submitError.message);setSubmitting(false);return}window.location.replace("/candidate/thank-you");
+    const {error:submitError}=await supabase.from("candidates").update({status:"submitted"}).eq("id",candidateId).eq("status","in_progress");if(submitError){setError(submitError.message);setSubmitting(false);return}window.location.replace(`/candidate/submission/${candidateId}`);
   }
   if(loading)return <main className="loading">Opening assessment…</main>;if(!candidate)return <main className="loading">{error}</main>;
   return <main className="runner"><header className="runner-header"><Brand/><div className={remaining<300?"timer urgent":"timer"}><span>Time remaining</span><strong>{String(Math.floor(remaining/60)).padStart(2,"0")}:{String(remaining%60).padStart(2,"0")}</strong></div></header>

@@ -43,7 +43,7 @@ export function CandidateWorkspace({ email }: { email: string }) {
         const open = now >= starts && now <= ends;
         return <article className="candidate-card" key={item.id}><div><em className={`status ${item.status}`}>{item.status.replaceAll("_"," ")}</em><h2>{item.assessment.title}</h2><p>{item.assessment.description}</p></div>
           <dl><div><dt>Duration</dt><dd>{item.assessment.duration_minutes} min</dd></div><div><dt>Tasks</dt><dd>{item.assessment.questions.length}</dd></div><div><dt>Total</dt><dd>{item.assessment.total_points} points</dd></div></dl>
-          {["submitted","reviewed"].includes(item.status) ? <div className="submitted">Submitted{item.score !== null && <strong>{item.score}/{item.assessment.total_points}</strong>}</div> :
+          {["submitted","reviewed"].includes(item.status) ? <div className="submitted"><span>Submitted</span>{item.score !== null && <strong>{item.score}/{item.assessment.total_points}</strong>}<a href={`/candidate/submission/${item.id}`}>View submission</a></div> :
           item.status === "in_progress" ? <a className="button primary" href={`/candidate/assessment/${item.id}`}>Continue assessment</a> :
           <button className="button primary" disabled={!open} onClick={() => void start(item.id)}>{open ? "Start assessment" : now < starts ? "Not open yet" : "Window closed"}</button>}
         </article>;

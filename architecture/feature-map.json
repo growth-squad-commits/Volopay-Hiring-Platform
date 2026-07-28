@@ -52,9 +52,11 @@
       "entry": "src/app/candidate/page.tsx",
       "owners": [
         "src/app/candidate/assessment/[candidateId]/page.tsx",
+        "src/app/candidate/submission/[candidateId]/page.tsx",
         "src/app/candidate/thank-you/page.tsx",
         "src/components/candidate-workspace.tsx",
         "src/components/assessment-runner.tsx",
+        "src/components/submission-confirmation.tsx",
         "src/styles/candidate.css"
       ],
       "sharedDependencies": [

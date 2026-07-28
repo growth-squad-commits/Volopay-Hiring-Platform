@@ -189,6 +189,11 @@
   text-underline-offset: 3px;
 }
 
+.responses .response-link {
+  display: block;
+  margin-top: 7px;
+}
+
 @media (max-width: 720px) {
   .form-grid {
     grid-template-columns: 1fr;
