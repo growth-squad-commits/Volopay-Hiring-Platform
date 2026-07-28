@@ -5,7 +5,7 @@ import { AppError, isEmail, normalizeEmail, publicError, requestOrigin, requireA
 
 type CandidateInput = {
   assessmentId?: unknown; fullName?: unknown; email?: unknown;
-  phone?: unknown; source?: unknown;
+  phone?: unknown; source?: unknown; accessExpiresAt?: unknown;
 };
 
 async function findAuthUserByEmail(email: string) {
@@ -36,6 +36,16 @@ async function sendAccessEmail(email: string, fullName: string, redirectTo: stri
   return existingUser;
 }
 
+function parseAccessExpiry(value: unknown) {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value !== "string") throw new AppError(400, "Invalid candidate access expiry.");
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime()) || date.getTime() <= Date.now()) {
+    throw new AppError(400, "Candidate access expiry must be in the future.");
+  }
+  return date.toISOString();
+}
+
 export async function POST(request: NextRequest) {
   try {
     await requireAdmin();
@@ -58,6 +68,13 @@ export async function POST(request: NextRequest) {
       const email = normalizeEmail(input.email);
       const phone = typeof input.phone === "string" ? input.phone.trim() || null : null;
       const source = input.source === "excel" ? "excel" : "manual";
+      let accessExpiresAt: string | null = null;
+      try {
+        accessExpiresAt = parseAccessExpiry(input.accessExpiresAt);
+      } catch (error) {
+        results.push({ email, invited: false, error: error instanceof Error ? error.message : "Invalid candidate access expiry." });
+        continue;
+      }
       if (!validAssessmentIds.has(assessmentId) || !fullName || !isEmail(email)) {
         results.push({ email, invited: false, error: "Invalid candidate details." });
         continue;
@@ -66,7 +83,8 @@ export async function POST(request: NextRequest) {
         const existingUser = await findAuthUserByEmail(email);
         const { data: assignment, error: assignmentError } = await admin.from("candidates").upsert({
           assessment_id: assessmentId, auth_user_id: existingUser?.id ?? null,
-          full_name: fullName, email, phone, source,
+          full_name: fullName, email, phone, source, is_active: true,
+          access_expires_at: accessExpiresAt,
         }, { onConflict: "assessment_id,email" }).select("id").single();
         if (assignmentError || !assignment) throw assignmentError ?? new Error("Assignment failed");
 
