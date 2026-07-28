@@ -78,12 +78,14 @@ export function AdminDashboard({ email }: { email: string }) {
   async function addCandidate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (!selected) return;
     setBusy(true); setError(""); const form = new FormData(event.currentTarget);
+    const rawExpiry = String(form.get("access_expires_at") ?? "").trim();
     const response = await fetch("/api/admin/candidates", {
       method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify({ candidates: [{
         assessmentId: selected.id, fullName: String(form.get("name")).trim(),
         email: String(form.get("email")).trim().toLowerCase(),
         phone: String(form.get("phone")).trim() || null, source: "manual",
+        accessExpiresAt: rawExpiry ? new Date(rawExpiry).toISOString() : null,
       }] }),
     });
     const result = await response.json() as { error?: string; results?: { error?: string }[] };
@@ -129,11 +131,13 @@ export function AdminDashboard({ email }: { email: string }) {
 
   async function saveAccess(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (!reviewCandidate) return;
-    setBusy(true); setError("");
     const form = new FormData(event.currentTarget);
+    const nextActive = form.get("is_active") === "true";
+    if (reviewCandidate.is_active && !nextActive && !window.confirm(`Deactivate access for ${reviewCandidate.full_name}? They will immediately lose access to the candidate portal and assessment.`)) return;
+    setBusy(true); setError("");
     const rawExpiry = String(form.get("access_expires_at") ?? "").trim();
     const { error: updateError } = await supabase.from("candidates").update({
-      is_active: form.get("is_active") === "true",
+      is_active: nextActive,
       access_expires_at: rawExpiry ? new Date(rawExpiry).toISOString() : null,
     }).eq("id", reviewCandidate.id);
     if (updateError) setError(updateError.message); else { setModal(null); notify("Candidate access updated."); await load(); }
@@ -174,7 +178,7 @@ export function AdminDashboard({ email }: { email: string }) {
         <div className="question-head"><h3>Tasks</h3><button type="button" className="button secondary small" onClick={() => setQuestions((v) => [...v, freshQuestion()])}><Plus size={14}/> Add task</button></div>
         {questions.map((q, index) => <div className="question-editor" key={index}><div><strong>Task {index + 1}</strong>{questions.length > 1 && <button type="button" onClick={() => setQuestions((v) => v.filter((_,i)=>i!==index))}>Remove</button>}</div><input placeholder="Task title" value={q.title} onChange={(e)=>setQuestions((v)=>v.map((x,i)=>i===index?{...x,title:e.target.value}:x))}/><textarea placeholder="Question or task instructions" value={q.prompt} onChange={(e)=>setQuestions((v)=>v.map((x,i)=>i===index?{...x,prompt:e.target.value}:x))}/><div className="form-grid"><label>Answer type<select value={q.response_type} onChange={(e)=>setQuestions((v)=>v.map((x,i)=>i===index?{...x,response_type:e.target.value as DraftQuestion["response_type"]}:x))}><option value="written">Written answer</option><option value="link">Link</option><option value="file_upload">File upload</option></select></label><label>Points<input type="number" min="1" value={q.points} onChange={(e)=>setQuestions((v)=>v.map((x,i)=>i===index?{...x,points:Number(e.target.value)}:x))}/></label></div></div>)}
         <button className="button primary full" disabled={busy}>Create assessment</button></form>}
-      {modal === "candidate" && <form onSubmit={addCandidate}><h2>Add candidate</h2><Field name="name" label="Full name" required/><Field name="email" label="Email" type="email" required/><Field name="phone" label="Phone"/><button className="button primary full" disabled={busy}>Add candidate</button></form>}
+      {modal === "candidate" && <form onSubmit={addCandidate}><h2>Add candidate</h2><Field name="name" label="Full name" required/><Field name="email" label="Email" type="email" required/><Field name="phone" label="Phone"/><Field name="access_expires_at" label="Access expires at" type="datetime-local" required/><p>The candidate will lose portal and assessment access at this date and time.</p><button className="button primary full" disabled={busy}>Add candidate</button></form>}
       {modal === "import" && <div><h2>Import candidates</h2><p>Upload an XLSX file with Name, Email and Phone in the first three columns.</p><label className="upload"><FileSpreadsheet/><span>Choose Excel file</span><input type="file" accept=".xlsx" onChange={(e)=>e.target.files?.[0]&&void importCandidates(e.target.files[0])}/></label></div>}
       {modal === "access" && reviewCandidate && <form onSubmit={saveAccess}><h2>Candidate access</h2><p>{reviewCandidate.full_name} · {reviewCandidate.email}</p><label>Access status<select name="is_active" defaultValue={String(reviewCandidate.is_active)}><option value="true">Active</option><option value="false">Inactive</option></select></label><Field name="access_expires_at" label="Access expires at" type="datetime-local" defaultValue={reviewCandidate.access_expires_at ? new Date(new Date(reviewCandidate.access_expires_at).getTime() - new Date(reviewCandidate.access_expires_at).getTimezoneOffset() * 60000).toISOString().slice(0,16) : ""}/><p>Leave the expiry empty for no additional candidate-specific expiry.</p><button className="button primary full" disabled={busy}>Save access</button></form>}
       {modal === "review" && reviewCandidate && <form onSubmit={saveDecision}><h2>{reviewCandidate.full_name}</h2><p>{reviewCandidate.email}</p><div className="responses">{selected?.questions.sort((a,b)=>a.sort_order-b.sort_order).map((q) => { const r = reviewCandidate.responses?.find((x)=>x.question_id===q.id); return <div key={q.id}><strong>{q.title}</strong><p>{r?.response_text || r?.response_url || r?.file_name || "No answer"}</p>{r?.response_url && <a href={r.response_url} target="_blank" rel="noreferrer">Open link</a>}</div>; })}</div><div className="form-grid"><Field name="score" label={`Score / ${selected?.total_points ?? 100}`} type="number" defaultValue={String(reviewCandidate.score ?? "")} required/><label>Decision<select name="decision" defaultValue={reviewCandidate.decision}><option value="pending">Pending</option><option value="shortlisted">Shortlisted</option><option value="on_hold">On hold</option><option value="rejected">Rejected</option></select></label></div><button className="button primary full" disabled={busy}>Save review</button></form>}
