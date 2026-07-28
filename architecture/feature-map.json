@@ -70,6 +70,28 @@
         "candidate-submissions"
       ],
       "validation": "npm run build"
+    },
+    "exam-attempt-processing": {
+      "entry": "src/app/api/candidate/attempts/start/route.ts",
+      "owners": [
+        "src/app/api/candidate/attempts/[attemptId]/route.ts",
+        "src/app/api/candidate/attempts/[attemptId]/answers/route.ts",
+        "src/app/api/candidate/attempts/[attemptId]/submit/route.ts",
+        "src/lib/server/candidate-attempts.ts",
+        "src/lib/client/answer-queue.ts",
+        "supabase/migrations/202607280008_phase4_exam_attempts.sql"
+      ],
+      "sharedDependencies": [
+        "src/lib/server/auth.ts",
+        "src/lib/server/rate-limit.ts",
+        "src/lib/supabase"
+      ],
+      "dataOwnership": [
+        "exam_attempts",
+        "candidate_responses",
+        "grading_queue"
+      ],
+      "validation": "npm run test:phase4"
     }
   }
 }
